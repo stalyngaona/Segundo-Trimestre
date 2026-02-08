@@ -1,0 +1,45 @@
+#include <WiFi.h>
+#include <ThingerESP32.h>
+
+/* ========= THINGER.IO ========= */
+#define USERNAME "StalynGaona"
+#define DEVICE_ID "rele"
+#define DEVICE_CREDENTIAL "20260026"
+
+/* ========= WIFI ========= */
+#define SSID "MECATRONICA_3ABC"
+#define SSID_PASSWORD "MEC2025@."
+
+/* ========= PIN ========= */
+// CAMBIAMOS AL PIN 4 para evitar errores de booteo
+#define RELE 4 
+
+ThingerESP32 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL);
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Para que inicie apagado:
+  // La mayoría de relés se apagan con HIGH. Si el tuyo es al revés, cambia a LOW.
+  pinMode(RELE, OUTPUT);
+  digitalWrite(RELE, HIGH); 
+
+  thing.add_wifi(SSID, SSID_PASSWORD);
+
+  // Recurso Thinger (Lógica para que el botón de la web coincida con el relé)
+  thing["RELE"] << [](pson & in) {
+    if (in.is_empty()) {
+      in = (digitalRead(RELE) == LOW); 
+    } else {
+      // Si en la web marcas "ON", el pin va a LOW (activa relé)
+      // Si en la web marcas "OFF", el pin va a HIGH (apaga relé)
+      digitalWrite(RELE, in ? LOW : HIGH);
+    }
+  };
+
+  Serial.println("Sistema Listo. Relé iniciado en APAGADO.");
+}
+
+void loop() {
+  thing.handle();
+}
